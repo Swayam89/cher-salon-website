@@ -58,36 +58,56 @@ modalClose.addEventListener('click', closeModal);
 bookingModal.addEventListener('click', e=>{ if(e.target === bookingModal) closeModal(); });
 document.addEventListener('keydown', e=>{ if(e.key === 'Escape') closeModal(); });
 
+/* Booking channel: WhatsApp instead of mailto.
+   Why: this is a local Indian salon — clients already default to WhatsApp/calling
+   a salon, not emailing one. A mailto: link depends on the visitor having a mail
+   client configured on that device, which a huge share of mobile visitors don't;
+   the request silently fails to send and nobody notices. wa.me works from any
+   device with just a browser (opens the app if installed, falls back to
+   web.whatsapp.com otherwise), and it's how these customers actually communicate.
+   Email is kept as a one-tap fallback link, not the primary path. */
+const LOUNGE_PHONES = {
+  'Surat': '+919638470000',
+  'Ahmedabad (Gulbai Tekra)': '+919638370000',
+  'Ahmedabad (Sindhu Bhavan)': '+919638270000',
+};
+
+function resolveBookingPhone(lounge){
+  return bookingModal.dataset.phone || LOUNGE_PHONES[lounge] || '';
+}
+
 /* populate the modal from data attributes on #bookingModal so this exact script
    works unmodified on every page — branch pages set data-email/data-phone/data-branch,
-   the home page leaves data-phone empty and falls back to "see Locations" instead */
+   the home page leaves data-phone empty and resolves it from the lounge dropdown instead */
 (function initBookingModal(){
   const email = bookingModal.dataset.email;
-  const phone = bookingModal.dataset.phone;
   document.getElementById('successMsg').innerHTML =
-    `Your email app should now open with the request pre-filled to <b>${email}</b> — hit send and our team will call to confirm your slot.`;
-  document.getElementById('bookingFallback').innerHTML = phone
-    ? `No email app on this device? <a href="tel:${phone}">Call ${phone.replace('+91','+91 ').replace(/(\d{5})(\d{5})$/, '$1 $2')}</a> instead.`
-    : `Prefer to call directly? Find your lounge's number in the <a href="#visit">Locations</a> section below.`;
+    `WhatsApp should now open with your request pre-filled — hit send and our team will confirm your slot.`;
+  document.getElementById('bookingFallback').innerHTML = email
+    ? `Prefer email? Write to <a href="mailto:${email}">${email}</a> instead.`
+    : `Prefer email? Find your lounge's address in the <a href="#visit">Locations</a> section below.`;
 })();
 
-/* real submission: no backend exists, so this builds a pre-filled email to the right inbox
-   and opens the visitor's mail client — an actual request gets sent, not just a UI fake-out */
+/* real submission: no backend exists, so this opens WhatsApp with the request
+   pre-filled to the right lounge's number — an actual message gets sent to a
+   real person, not just a UI fake-out */
 document.getElementById('bookForm').addEventListener('submit', e=>{
   e.preventDefault();
   const form = e.target;
   const name = form.querySelector('input[type="text"]').value;
-  const phone = form.querySelector('input[type="tel"]').value;
+  const clientPhone = form.querySelector('input[type="tel"]').value;
   const loungeField = form.querySelector('select[name="lounge"]');
   const lounge = loungeField ? loungeField.value : bookingModal.dataset.branch;
   const service = form.querySelector('select[name="service"]').value;
   const date = form.querySelector('input[type="date"]').value;
-  const email = bookingModal.dataset.email;
-  const subject = encodeURIComponent(`Appointment Request — ${name} (${lounge})`);
-  const body = encodeURIComponent(
-    `New booking request from cherhbl.com:\n\nName: ${name}\nPhone: ${phone}\nLounge: ${lounge}\nService: ${service}\nPreferred date: ${date}\n`
+
+  const salonPhone = resolveBookingPhone(lounge).replace(/[^\d]/g,''); // wa.me needs digits only
+  const message = encodeURIComponent(
+    `Hi CHER! I'd like to book an appointment.\n\nName: ${name}\nPhone: ${clientPhone}\nLounge: ${lounge}\nService: ${service}\nPreferred date: ${date}`
   );
-  window.location.href = `mailto:${email}?subject=${subject}&body=${body}`;
+  if(salonPhone){
+    window.open(`https://wa.me/${salonPhone}?text=${message}`, '_blank', 'noopener');
+  }
   document.getElementById('bookingForm').style.display='none';
   document.getElementById('bookingSuccess').style.display='block';
 });
