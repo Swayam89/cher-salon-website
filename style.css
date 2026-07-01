@@ -104,7 +104,8 @@
      link and the panel with real (invisible) hoverable area, so the mouse never leaves
      .nav-drop while crossing that gap and the panel doesn't vanish before it's reachable */
   .nav-drop:hover .nav-drop-panel,
-  .nav-drop-panel:hover{opacity:1;pointer-events:auto;transform:translateX(-50%) translateY(0);}
+  .nav-drop-panel:hover,
+  .nav-drop.open .nav-drop-panel{opacity:1;pointer-events:auto;transform:translateX(-50%) translateY(0);}
   .nav-drop-panel a{
     display:block;padding:.7rem .8rem;border-radius:12px;font-size:.76rem;
     letter-spacing:.02em;text-transform:none;transition:.25s;opacity:1;

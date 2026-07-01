@@ -22,6 +22,26 @@ if(burgerBtn){
   }));
 }
 
+/* Locations dropdown — CSS hover covers desktop mouse users, but touch devices and any
+   pointer without true hover (tablets, some trackpads) never get a hover state at all,
+   so the trigger link would just navigate away on first tap and the panel never opens.
+   Toggling an "open" class on click/tap fixes that everywhere, on every page, since this
+   script and its markup structure are shared identically across all 4 pages. */
+document.querySelectorAll('.nav-drop').forEach(drop => {
+  const trigger = drop.querySelector(':scope > a');
+  if(!trigger) return;
+  trigger.addEventListener('click', e => {
+    e.preventDefault();
+    document.querySelectorAll('.nav-drop.open').forEach(d => { if(d !== drop) d.classList.remove('open'); });
+    drop.classList.toggle('open');
+  });
+});
+document.addEventListener('click', e => {
+  document.querySelectorAll('.nav-drop.open').forEach(drop => {
+    if(!drop.contains(e.target)) drop.classList.remove('open');
+  });
+});
+
 /* booking modal */
 const bookingModal = document.getElementById('bookingModal');
 const modalClose = document.getElementById('modalClose');
