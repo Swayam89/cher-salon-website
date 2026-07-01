@@ -80,7 +80,21 @@ newsletterForm.addEventListener('submit', e=>{
   document.getElementById('newsletterNote').classList.add('show');
 });
 
-/* preloader */
+/* preloader — with a hard fallback so a throttled/backgrounded tab can never
+   leave a visitor stuck on a black screen forever. GSAP's ticker relies on
+   requestAnimationFrame, which browsers freeze almost completely when a tab
+   isn't the visible/active one (e.g. opened in a background tab, or the
+   device throttles it) — without this, the reveal tween could stall
+   indefinitely and the whole site would just never appear. */
+let siteRevealed = false;
+function revealSite(){
+  if(siteRevealed) return;
+  siteRevealed = true;
+  const preloaderEl = document.getElementById('preloader');
+  if(preloaderEl) preloaderEl.style.display = 'none';
+  playHero();
+}
+
 window.addEventListener('load', () => {
   const bar = document.querySelector('#preloader .bar span');
   const pct = document.querySelector('#preloader .pct');
@@ -89,12 +103,14 @@ window.addEventListener('load', () => {
     bar.style.width = p.v+'%';
     pct.textContent = Math.round(p.v)+'%';
   },onComplete:()=>{
-    gsap.to('#preloader',{yPercent:-100,duration:1,ease:'power4.inOut',delay:.15,onComplete:()=>{
-      document.getElementById('preloader').style.display='none';
-      playHero();
-    }});
+    gsap.to('#preloader',{yPercent:-100,duration:1,ease:'power4.inOut',delay:.15,onComplete:revealSite});
   }});
 });
+
+/* safety net: force the site visible after 4s no matter what state the
+   preloader animation is in — a backgrounded/throttled tab should never
+   be a single point of failure for content actually showing up */
+setTimeout(revealSite, 4000);
 
 function playHero(){
   const tl = gsap.timeline({defaults:{ease:'power4.out'}});
